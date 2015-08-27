@@ -20,3 +20,7 @@ draw([150,  50], [100, -50]);
 draw([200,  25], [  0, 100]);
 draw([200, 125], [-50,   0]);
 draw([150, 125], [  0, -25]);
+
+$(document).ready(function(){
+ $("#msgid").html("Hello World using JQuery and Paper.js");
+});
