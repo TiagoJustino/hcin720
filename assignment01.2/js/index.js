@@ -7,7 +7,7 @@ var accumulatedData = {};
 var now;
 var startTime;
 var color = ['red', 'blue', 'brown', 'purple'];
-var offset = 20;
+var offset = 40;
 
 // modified from http://stackoverflow.com/questions/1584370/how-to-merge-two-arrays-in-javascript-and-de-duplicate-items
 var arrayUnique = function (array) {
@@ -168,13 +168,31 @@ var drawAxis = function() {
   lines.push({start: new Point(offset, 0), end: new Point(offset, view.size.height)});
 
   // draw x ticks
-  for (var i = offset + xstep; i < view.size.height; i += xstep) {
+  for (var i = xstep; i < view.size.height - offset; i += xstep) {
     lines.push({start: new Point(offset - 3, i), end: new Point(offset + 3, i)});
+    if (i % (3 * xstep) === 0) {
+      var label = new PointText({
+        point: new Point(offset - 20, i - 36),
+        justification: 'center',
+        fontSize: 15, 
+        fillColor: 'black'
+      }); 
+      label.content = view.size.height - i;
+    }
   }
 
   // draw y ticks
   for (var i = offset + ystep; i < view.size.width; i += ystep) {
     lines.push({start: new Point(i, view.size.height - offset - 3), end: new Point(i, view.size.height - offset + 3)});
+    if ((i - offset) % (3 * xstep) === 0) {
+      var label = new PointText({
+        point: new Point(i, view.size.height - offset + 16),
+        justification: 'center',
+        fontSize: 15, 
+        fillColor: 'black'
+      }); 
+      label.content = Math.floor((i - offset)/ystep);
+    }
   }
 
   for (var i = 0; i < lines.length; i++) {
