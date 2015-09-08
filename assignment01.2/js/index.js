@@ -6,6 +6,8 @@ var collectedData = [];
 var accumulatedData = {};
 var now;
 var startTime;
+var color = ['red', 'blue', 'brown', 'purple'];
+var offset = 20;
 
 // modified from http://stackoverflow.com/questions/1584370/how-to-merge-two-arrays-in-javascript-and-de-duplicate-items
 var arrayUnique = function (array) {
@@ -123,17 +125,70 @@ var updateAccumulatedData = function() {
   }
 }
 
-var plotData = function(label, data) {
-  console.log(label, data);
+var mapPoint = function(time, value) {
+  var x = time - startTime + offset;
+  var y = view.size.height - value - offset;
+  return new Point(x, y);
+}
+
+var drawPoint = function(point, color) {
+  var shape = new Path.Circle(point, 5); 
+  shape.strokeColor = color;
+  shape.fillColor = color;
+}
+
+var plotData = function(label, data, color) {
+  path = new Path();
+  path.strokeColor = color;
+  path.strokeWidth = 3;
+  path.segments = [];
+  for (i = 0; i < data.length; i++) {
+    var point = mapPoint(data[i].time, data[i].value);
+    drawPoint(point, color);
+    path.add(point);
+  }
+}
+
+var drawAxis = function() {
+  var lines = [];
+  var xstep = 20;
+  var ystep = 60;
+  // draw x axis
+  lines.push({start: new Point(0, view.size.height - offset), end: new Point(view.size.width, view.size.height - offset)});
+  // draw y axis
+  lines.push({start: new Point(offset, 0), end: new Point(offset, view.size.height)});
+
+  // draw x ticks
+  for (var i = offset + xstep; i < view.size.height; i += xstep) {
+    lines.push({start: new Point(offset - 3, i), end: new Point(offset + 3, i)});
+  }
+
+  // draw y ticks
+  for (var i = offset + ystep; i < view.size.width; i += ystep) {
+    lines.push({start: new Point(i, view.size.height - offset - 3), end: new Point(i, view.size.height - offset + 3)});
+  }
+
+  for (var i = 0; i < lines.length; i++) {
+    var path = new Path();
+    path.strokeWidth = 2;
+    path.strokeColor = 'black';
+    path.moveTo(lines[i].start);
+    path.lineTo(lines[i].end);
+  }
 }
 
 var updateGraph = function() {
+  project.activeLayer.removeChildren();
+  var background = new Path.Rectangle(view.bounds);
+  background.fillColor = 'lightgrey';
+  drawAxis();
   updateAccumulatedData();
+  var colorIndex = 0;
   if (usersData) {
     for(var i = 1; i <= 2; i++) {
       var user = usersData[usersData.length - i];
       if(user) {
-        plotData(user.login, accumulatedData[user.login]);
+        plotData(user.login, accumulatedData[user.login], color[colorIndex++]);
       }
     }
   }
@@ -142,7 +197,7 @@ var updateGraph = function() {
     for(var i = 1; i <= 2; i++) {
       var event = eventsData[eventsData.length - i];
       if(event) {
-        plotData(event.type, accumulatedData[event.type]);
+        plotData(event.type, accumulatedData[event.type], color[colorIndex++]);
       }
     }
   }
@@ -165,11 +220,11 @@ var onFetchedData = function( data ) {
     populateEventsList(collectedData);
     updateGraph();
   }
-  setTimeout(requestData, 1000);
+  setTimeout(requestData, 60000);
 }
 
 var getSeconds = function() {
-  return new Date().getTime() / 1000;
+  return Math.floor(new Date().getTime() / 1000);
 }
 
 startTime = getSeconds();
