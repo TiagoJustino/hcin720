@@ -7,7 +7,9 @@ regarding events (e.g. push, pull request) happening now.
 
 Github was used as data source. It provides a url that returns all events
 happening on github right now in JSON format
-([https://api.github.com/events](https://api.github.com/events)).
+([https://api.github.com/events](https://api.github.com/events)). As github
+allows only 60 request per hour for unauthenticated applications, the refresh
+rate was set to 60 seconds.
 
 ## Libraries
 
