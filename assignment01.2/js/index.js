@@ -128,6 +128,12 @@ var updateAccumulatedData = function() {
 var mapPoint = function(time, value) {
   var x = time - startTime + offset;
   var y = view.size.height - value - offset;
+  if (x > view.size.width - 7) {
+    x = view.size.width - 7;
+  }
+  if (y < 7) {
+    y = 7;
+  }
   return new Point(x, y);
 }
 
@@ -138,10 +144,13 @@ var drawPoint = function(point, color) {
 }
 
 var plotData = function(label, data, color) {
+  $('#legend').append('<li style="display: inline; color:' + color + ';">&#9899;' + label + '  </li>');
   path = new Path();
   path.strokeColor = color;
   path.strokeWidth = 3;
   path.segments = [];
+  // get only last 17 elements.
+  data = data.slice(-17);
   for (i = 0; i < data.length; i++) {
     var point = mapPoint(data[i].time, data[i].value);
     drawPoint(point, color);
@@ -184,11 +193,12 @@ var updateGraph = function() {
   drawAxis();
   updateAccumulatedData();
   var colorIndex = 0;
+  $('#legend').empty();
   if (usersData) {
     for(var i = 1; i <= 2; i++) {
       var user = usersData[usersData.length - i];
       if(user) {
-        plotData(user.login, accumulatedData[user.login], color[colorIndex++]);
+        plotData('User ' + user.login, accumulatedData[user.login], color[colorIndex++]);
       }
     }
   }
@@ -197,7 +207,7 @@ var updateGraph = function() {
     for(var i = 1; i <= 2; i++) {
       var event = eventsData[eventsData.length - i];
       if(event) {
-        plotData(event.type, accumulatedData[event.type], color[colorIndex++]);
+        plotData(event.type + ' event', accumulatedData[event.type], color[colorIndex++]);
       }
     }
   }
