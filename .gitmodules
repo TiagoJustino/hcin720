@@ -1,0 +1,3 @@
+[submodule "ia2/IA2"]
+	path = ia2/IA2
+	url = https://github.com/hcin720-fall15/IA2.git
