@@ -1,4 +1,4 @@
-all: compile flash run
+all: compile flash
 
 compile:
 	particle compile photon ./photon --saveTo app.bin
