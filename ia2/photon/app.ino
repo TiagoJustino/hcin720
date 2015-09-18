@@ -1,9 +1,10 @@
 #include "MMA8452Q.h"
 #include "pitches.h"
 #include "nyancat.h"
+#include <system_cloud.h>
 
 MMA8452Q accel;
-int ledFrequency = 1000;
+int ledFrequency = 2000;
 volatile bool nyan = false;
 int eventSoundCounter = 0;
 bool eventSound = false;
@@ -11,8 +12,19 @@ byte pl = LOCKOUT, prevPl = LOCKOUT;
 int buzzerPin = D2;
 int frequencies[] = {2000, 2400, 2800, 3200, 3600, 4000};
 int nextNyanSoundIndex;
-unsigned long nextNyanSoundTime;
+
 unsigned long now;
+unsigned long readAccelCounter;
+unsigned long sendDataCounter;
+unsigned long nextNyanSoundCounter;
+unsigned long ledSignalingCounter;
+unsigned long ledCounter;
+
+const uint32_t VIBGYOR_Colors[] = {
+    0xEE82EE, 0x4B0082, 0x0000FF, 0x00FF00, 0xFFFF00, 0xFFA500, 0xFF0000
+};
+const int VIBGYOR_Size = sizeof (VIBGYOR_Colors) / sizeof (uint32_t);
+int VIBGYOR_Index;
 
 int eventHandler(String data) {
   eventSoundCounter = 0;
@@ -118,9 +130,12 @@ void readAccel() {
     if(nyan) {
       ledFrequency = 250;
       nextNyanSoundIndex = 0;
-      nextNyanSoundTime = now - 1;
+      nextNyanSoundCounter = now - 1;
+      LED_Signaling_Start();
+      ledSignalingCounter = now;
     } else {
-      ledFrequency = 1000;
+      ledFrequency = 2000;
+      LED_Signaling_Stop();
     }
   }
 }
@@ -129,13 +144,16 @@ void checkEventSound() {
 }
 
 void checkNyanSound() {
-  if(now > nextNyanSoundTime) {
+  if(now >= nextNyanSoundCounter) {
     int thisNote = nyanMelody[nextNyanSoundIndex];
-    int noteDuration = 1000 / nyanNoteDurations[nextNyanSoundIndex];
+    int noteDuration = 880 / nyanNoteDurations[nextNyanSoundIndex];
     int pauseBetweenNotes = noteDuration * 1.30;
     tone(buzzerPin, thisNote, noteDuration);
+    nextNyanSoundCounter += noteDuration + pauseBetweenNotes;
     nextNyanSoundIndex += 1;
-    nextNyanSoundTime += noteDuration + pauseBetweenNotes;
+    if(nextNyanSoundIndex == melodyLength) {
+      nextNyanSoundIndex = 26;
+    }
   }
 }
 
@@ -162,18 +180,38 @@ void checkOrientation() {
   }
 }
 
+// copied from system/src/system_cloud_internal.cpp (photon firmware code)
+void LED_Signaling_Override(void)
+{
+  LED_SetSignalingColor(VIBGYOR_Colors[VIBGYOR_Index]);
+  LED_On(LED_RGB);
+
+  ++VIBGYOR_Index;
+  if (VIBGYOR_Index >= VIBGYOR_Size)
+  {
+    VIBGYOR_Index = 0;
+  }
+}
+
 void loop() {
   now = millis();
-  if(now % 250 == 0) {
+  if(nyan && ( now - ledSignalingCounter > 99)) {
+    ledSignalingCounter = now;
+    LED_Signaling_Override();
+  }
+  if(now - readAccelCounter > 249) {
+    readAccelCounter = now;
     readAccel();
     checkOrientation();
   }
 
-  if(now % 1000 == 0) {
+  if(now - sendDataCounter > 999) {
+    sendDataCounter = now;
     sendData();
   }
 
-  if(now % ledFrequency == 0) {
+  if(now - ledCounter > ledFrequency) {
+    ledCounter = now;
     toggleLed();
   }
 
