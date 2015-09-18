@@ -6,18 +6,26 @@
 MMA8452Q accel;
 int ledFrequency = 2000;
 volatile bool nyan = false;
-int eventSoundCounter = 0;
-bool eventSound = false;
-byte pl = LOCKOUT, prevPl = LOCKOUT;
+volatile bool eventSound = false;
+volatile byte pl = LOCKOUT, prevPl = LOCKOUT;
 int buzzerPin = D2;
 int frequencies[] = {2000, 2400, 2800, 3200, 3600, 4000};
 int nextNyanSoundIndex;
+int nextEventSoundIndex;
+struct {
+  int x = 0, y = 0, z = 0;
+} previousAccel;
+enum MODE {ORIENTATION, MUSICAL, SILENT};
+int mode = ORIENTATION;
+int previousCloudEvent = 0;
+int currentCloudEvent = 0;
 
 unsigned long now;
 unsigned long readAccelCounter;
 unsigned long sendDataCounter;
 unsigned long nextNyanSoundCounter;
 unsigned long ledSignalingCounter;
+unsigned long nextEventSoundCounter;
 unsigned long ledCounter;
 
 const uint32_t VIBGYOR_Colors[] = {
@@ -26,10 +34,20 @@ const uint32_t VIBGYOR_Colors[] = {
 const int VIBGYOR_Size = sizeof (VIBGYOR_Colors) / sizeof (uint32_t);
 int VIBGYOR_Index;
 
-int eventHandler(String data) {
-  eventSoundCounter = 0;
-  eventSound = true;
-  return 0;
+int eventMelodySize = 8;
+int eventMelody[] = {NOTE_C7, NOTE_D7, NOTE_E7, NOTE_F7, NOTE_G7, NOTE_A7, NOTE_B7, NOTE_C8};
+
+void eventHandler(const char *event, const char *data) {
+  if(data) {
+    previousCloudEvent = currentCloudEvent;
+    currentCloudEvent = atoi(data);
+    nextEventSoundCounter = now;
+    nextEventSoundIndex = 0;
+    eventSound = true;
+  }
+}
+
+int setMode(String modeArg) {
 }
 
 void setup() {
@@ -37,7 +55,8 @@ void setup() {
   Serial.begin(9600);
   pinMode(D7, OUTPUT);
   pinMode(buzzerPin, OUTPUT);
-  Spark.function("cloudevent", eventHandler);
+  Spark.subscribe("cloudevent", eventHandler, MY_DEVICES);
+  Spark.function("setmode", setMode);
 }
 
 String getOrientation(byte _pl) {
@@ -57,52 +76,33 @@ String getOrientation(byte _pl) {
   return "Unknown";
 }
 
+void myTone(int frequency, int duration) {
+  if(mode != SILENT) {
+    tone(buzzerPin, frequency, duration);
+  }
+}
+
 void playSound(byte _pl) {
   int duration = 150;
   switch (_pl)
   {
     case PORTRAIT_U:
-      tone(buzzerPin, frequencies[0], duration);
+      myTone(frequencies[0], duration);
       return;
     case PORTRAIT_D:
-      tone(buzzerPin, frequencies[1], duration);
+      myTone(frequencies[1], duration);
       return;
     case LANDSCAPE_R:
-      tone(buzzerPin, frequencies[2], duration);
+      myTone(frequencies[2], duration);
       return;
     case LANDSCAPE_L:
-      tone(buzzerPin, frequencies[3], duration);
+      myTone(frequencies[3], duration);
       return;
     case LOCKOUT:
-      tone(buzzerPin, frequencies[4], duration);
+      myTone(frequencies[4], duration);
       return;
   }
-  tone(buzzerPin, frequencies[5], duration);
-}
-
-int counter = 0;
-int nyanSoundCounter = 0;
-
-void playSong(int frequency) {
-  if(frequency > 0) {
-    tone(buzzerPin, frequency, 150);
-  } else {
-    noTone(buzzerPin);
-  }
-}
-
-int eventMelodySize = 13;
-int eventMelody[] = {NOTE_C7, NOTE_CS7, NOTE_D7, NOTE_DS7, NOTE_E7, NOTE_F7, NOTE_FS7, NOTE_G7, NOTE_GS7, NOTE_A7, NOTE_AS7, NOTE_B7, NOTE_C8};
-
-void playEventSound() {
-  if(eventSoundCounter == eventMelodySize) {
-    eventSound = false;
-    nyan = false;
-    eventSoundCounter = 0;
-  } else {
-    playSong(eventMelody[eventSoundCounter]);
-    eventSoundCounter++;
-  }
+  myTone(frequencies[5], duration);
 }
 
 void sendData() {
@@ -141,6 +141,19 @@ void readAccel() {
 }
 
 void checkEventSound() {
+  if(now >= nextEventSoundCounter) {
+    toggleLed();
+    int index = previousCloudEvent < currentCloudEvent ? nextEventSoundIndex :
+      (currentCloudEvent < previousCloudEvent ? eventMelodySize - 1 - nextEventSoundIndex : 3);
+    int thisNote = eventMelody[index];
+    int noteDuration = 150;
+    myTone(thisNote, noteDuration);
+    nextEventSoundCounter += noteDuration;
+    nextEventSoundIndex += 1;
+    if(nextEventSoundIndex == eventMelodySize) {
+      eventSound = false;
+    }
+  }
 }
 
 void checkNyanSound() {
@@ -148,7 +161,7 @@ void checkNyanSound() {
     int thisNote = nyanMelody[nextNyanSoundIndex];
     int noteDuration = 880 / nyanNoteDurations[nextNyanSoundIndex];
     int pauseBetweenNotes = noteDuration * 1.30;
-    tone(buzzerPin, thisNote, noteDuration);
+    myTone(thisNote, noteDuration);
     nextNyanSoundCounter += noteDuration + pauseBetweenNotes;
     nextNyanSoundIndex += 1;
     if(nextNyanSoundIndex == melodyLength) {
@@ -180,6 +193,16 @@ void checkOrientation() {
   }
 }
 
+void checkMovement() {
+  if(!nyan) {
+    int diff = abs(accel.x - previousAccel.x);
+    diff += abs(accel.y - previousAccel.y);
+    diff += abs(accel.z - previousAccel.z);
+
+    myTone(diff, 100);
+  }
+}
+
 // copied from system/src/system_cloud_internal.cpp (photon firmware code)
 void LED_Signaling_Override(void)
 {
@@ -195,27 +218,34 @@ void LED_Signaling_Override(void)
 
 void loop() {
   now = millis();
-  if(nyan && ( now - ledSignalingCounter > 99)) {
+  if(nyan && ( now - ledSignalingCounter >= 100)) {
     ledSignalingCounter = now;
     LED_Signaling_Override();
   }
-  if(now - readAccelCounter > 249) {
+  if(now - readAccelCounter >= 100) {
     readAccelCounter = now;
     readAccel();
-    checkOrientation();
+    switch(mode) {
+      case ORIENTATION:
+        checkOrientation();
+        break;
+      case MUSICAL:
+        checkMovement();
+    }
+    previousAccel.x = accel.x;
+    previousAccel.y = accel.y;
+    previousAccel.z = accel.z;
   }
 
-  if(now - sendDataCounter > 999) {
+  if(now - sendDataCounter >= 1000) {
     sendDataCounter = now;
     sendData();
   }
 
-  if(now - ledCounter > ledFrequency) {
+  if(now - ledCounter >= ledFrequency) {
     ledCounter = now;
     toggleLed();
   }
 
-  if(nyan) {
-    checkSound();
-  }
+  checkSound();
 }
