@@ -48,6 +48,20 @@ void eventHandler(const char *event, const char *data) {
 }
 
 int setMode(String modeArg) {
+  Serial.println(modeArg);
+  if(modeArg == "silent") {
+    mode = SILENT;
+    return 0;
+  }
+  else if(modeArg == "orientation") {
+    mode = ORIENTATION;
+    return 0;
+  }
+  else if(modeArg == "musical") {
+    mode = MUSICAL;
+    return 0;
+  }
+  return -1;
 }
 
 void setup() {
