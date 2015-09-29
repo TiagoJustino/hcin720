@@ -56,7 +56,8 @@ libraries. Two visualizations were created.
 
 The basic view presents in a graph the data received from the photoresistor and
 from the accelerometer (the acceleration on the axis x, y and z). The data can
-be received either from the cloud or from serial connection.
+be received either from the cloud or from serial connection. The data is sent
+to cloud by using the method `Spark.publish()`.
 
 The second view further explore the capabilities of the project and show the
 received data in a indirect way. A photon image is loaded to the canvas in the
@@ -68,6 +69,10 @@ on the web by switching the photon image to a [Nyan cat](http://www.nyan.cat/).
 Upon receiving entering the nyan cat mode, the photon also starts playing the
 nyan cat song and shouting rainbow sequence (The status RGB LED iterate over
 different colors).
+
+This second visualization is also capable of publishing an event, which is
+received by the photon via `Spark.subscribe()`, and of calling a function on
+the photon, which is exposed by it using `Spark.function()`.
 
 ## Connections
 
