@@ -71,4 +71,13 @@ different colors).
 
 ## Connections
 
+* D0 is connected to a 330 ohm, which is connect to Accelerometer SDA pin.
+* D1 is connected to a 330 ohm, which is connect to Accelerometer SCL pin.
+* D2 is connected to one end o the piezo buzzer. The other end of the buzzer is connected to ground.
+* A0 is simultaneously connected to one end of the photoresistor and to one end of the 10k ohm resistor.
+ - The second end of the photoresistor is connected to 3v3.
+ - The second end of the 10k ohm resistor is connected to ground.
+* The accelerometer 3v3 pin is connected to photon's 3v3 pin.
+* The accelerometer GND pin is connected to ground.
+
 ![Photon component connections](https://raw.githubusercontent.com/TiagoJustino/hcin720/master/ia2/connections.jpg)
