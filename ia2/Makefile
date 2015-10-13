@@ -7,7 +7,7 @@ usbflash:
 	sudo particle flash --usb app.bin
 
 flash:
-	sudo particle flash hcin720 app.bin
+	particle flash hcin720 app.bin
 
 monitor:
 	sudo particle serial monitor

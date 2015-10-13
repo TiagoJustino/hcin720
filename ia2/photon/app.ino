@@ -1,7 +1,11 @@
 #include "MMA8452Q.h"
 #include "pitches.h"
 #include "nyancat.h"
+#include <math.h>
 #include <system_cloud.h>
+
+#define PI 3.14159265
+#define ACCEL_QUEUE_SIZE 16
 
 MMA8452Q accel;
 int ledFrequency = 2000;
@@ -12,9 +16,10 @@ int buzzerPin = D2;
 int frequencies[] = {2000, 2400, 2800, 3200, 3600, 4000};
 int nextNyanSoundIndex;
 int nextEventSoundIndex;
+int accelQueuePos = 0;
 struct {
   int x = 0, y = 0, z = 0;
-} previousAccel;
+} previousAccel, accelQueue[ACCEL_QUEUE_SIZE];
 enum MODE {ORIENTATION, MUSICAL, SILENT};
 int mode = ORIENTATION;
 int previousCloudEvent = 0;
@@ -27,6 +32,19 @@ unsigned long nextNyanSoundCounter;
 unsigned long ledSignalingCounter;
 unsigned long nextEventSoundCounter;
 unsigned long ledCounter;
+
+double accel_angle_x;
+double accel_angle_y;
+int accel_center_x;
+int accel_center_y;
+int accel_center_z;
+
+const float alpha = 0.5;
+double fXg = 0;
+double fYg = 0;
+double fZg = 0;
+double roll;
+double pitch;
 
 const uint32_t VIBGYOR_Colors[] = {
     0xEE82EE, 0x4B0082, 0x0000FF, 0x00FF00, 0xFFFF00, 0xFFA500, 0xFF0000
@@ -48,7 +66,6 @@ void eventHandler(const char *event, const char *data) {
 }
 
 int setMode(String modeArg) {
-  Serial.println(modeArg);
   if(modeArg == "silent") {
     mode = SILENT;
     return 0;
@@ -69,8 +86,8 @@ void setup() {
   Serial.begin(9600);
   pinMode(D7, OUTPUT);
   pinMode(buzzerPin, OUTPUT);
-  Spark.subscribe("cloudevent", eventHandler, MY_DEVICES);
-  Spark.function("setmode", setMode);
+  Particle.subscribe("cloudevent", eventHandler, MY_DEVICES);
+  Particle.function("setmode", setMode);
 }
 
 String getOrientation(byte _pl) {
@@ -128,15 +145,24 @@ void sendData() {
   pl = accel.readPL();
   orientation = getOrientation(pl);
 
-  sprintf(str, "%d:%d:%d:%d:%s:%d", accel.x, accel.y, accel.z, light, orientation.c_str(), nyan);
+  sprintf(str, "%6d : %6d : %6d : %6d : %16s : %1d : %4.0f : %4.0f", accel.x, accel.y, accel.z, light, orientation.c_str(), nyan, pitch, roll);
   Serial.println(str);
-  Spark.publish("accelData", str);
+  Particle.publish("accelData", str);
+}
+
+void queueAccelRead() {
+  accelQueue[accelQueuePos].x = accel.x;
+  accelQueue[accelQueuePos].y = accel.y;
+  accelQueue[accelQueuePos].z = accel.z;
+  accelQueuePos++;
+  accelQueuePos = accelQueuePos == ACCEL_QUEUE_SIZE ? 0 : accelQueuePos;
 }
 
 void readAccel() {
   int tap;
 
   accel.read();
+  queueAccelRead();
   tap = accel.readTap();
 
   if(tap > 0) {
@@ -230,6 +256,52 @@ void LED_Signaling_Override(void)
   }
 }
 
+int getXAverage() {
+  int sum = 0;
+  for(int i = 0; i < ACCEL_QUEUE_SIZE; i++) {
+    sum += accelQueue[i].x;
+  }
+  return sum / ACCEL_QUEUE_SIZE;
+}
+
+int getYAverage() {
+  int sum = 0;
+  for(int i = 0; i < ACCEL_QUEUE_SIZE; i++) {
+    sum += accelQueue[i].y;
+  }
+  return sum / ACCEL_QUEUE_SIZE;
+}
+
+int getZAverage() {
+  int sum = 0;
+  for(int i = 0; i < ACCEL_QUEUE_SIZE; i++) {
+    sum += accelQueue[i].z;
+  }
+  return sum / ACCEL_QUEUE_SIZE;
+}
+
+// copied from http://www.hobbytronics.co.uk/accelerometer-info
+void calc_xy_angles(){
+  int x = getXAverage();
+  int y = getYAverage();
+  int z = getZAverage();
+  accel_angle_x = atan(x / sqrt(y * y + z * z)) * 180 / PI;
+  accel_angle_y = atan(y / sqrt(x * x + z * z)) * 180 / PI;
+}
+
+
+// copied from http://theccontinuum.com/2012/09/24/arduino-imu-pitch-roll-from-accelerometer/
+void calc_xy_angles2(int Xg, int Yg, int Zg){
+  //Low Pass Filter
+  fXg = Xg * alpha + (fXg * (1.0 - alpha));
+  fYg = Yg * alpha + (fYg * (1.0 - alpha));
+  fZg = Zg * alpha + (fZg * (1.0 - alpha));
+
+  //Roll & Pitch Equations
+  roll  = (atan2(-fYg, fZg)*180.0)/M_PI;
+  pitch = (atan2(fXg, sqrt(fYg*fYg + fZg*fZg))*180.0)/M_PI;
+}
+
 void loop() {
   now = millis();
   if(nyan && ( now - ledSignalingCounter >= 100)) {
@@ -239,6 +311,7 @@ void loop() {
   if(now - readAccelCounter >= 100) {
     readAccelCounter = now;
     readAccel();
+    calc_xy_angles2(accel.x, accel.y, accel.z);
     switch(mode) {
       case ORIENTATION:
         checkOrientation();
