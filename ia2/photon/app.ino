@@ -5,7 +5,9 @@
 #include <system_cloud.h>
 
 #define PI 3.14159265
-#define ACCEL_QUEUE_SIZE 16
+#define ACCEL_QUEUE_SIZE 20
+
+Servo servo;
 
 MMA8452Q accel;
 int ledFrequency = 2000;
@@ -13,6 +15,8 @@ volatile bool nyan = false;
 volatile bool eventSound = false;
 volatile byte pl = LOCKOUT, prevPl = LOCKOUT;
 int buzzerPin = D2;
+int servoPin = D3;
+int startServoPos = 90;
 int frequencies[] = {2000, 2400, 2800, 3200, 3600, 4000};
 int nextNyanSoundIndex;
 int nextEventSoundIndex;
@@ -39,12 +43,12 @@ int accel_center_x;
 int accel_center_y;
 int accel_center_z;
 
-const float alpha = 0.5;
-double fXg = 0;
-double fYg = 0;
-double fZg = 0;
-double roll;
-double pitch;
+//const float alpha = 0.5;
+//double fXg = 0;
+//double fYg = 0;
+//double fZg = 0;
+//double roll;
+//double pitch;
 
 const uint32_t VIBGYOR_Colors[] = {
     0xEE82EE, 0x4B0082, 0x0000FF, 0x00FF00, 0xFFFF00, 0xFFA500, 0xFF0000
@@ -86,6 +90,8 @@ void setup() {
   Serial.begin(9600);
   pinMode(D7, OUTPUT);
   pinMode(buzzerPin, OUTPUT);
+  servo.attach(servoPin);
+  servo.write(startServoPos);
   Particle.subscribe("cloudevent", eventHandler, MY_DEVICES);
   Particle.function("setmode", setMode);
 }
@@ -145,7 +151,7 @@ void sendData() {
   pl = accel.readPL();
   orientation = getOrientation(pl);
 
-  sprintf(str, "%6d : %6d : %6d : %6d : %16s : %1d : %4.0f : %4.0f", accel.x, accel.y, accel.z, light, orientation.c_str(), nyan, pitch, roll);
+  sprintf(str, "%6d : %6d : %6d : %6d : %16s : %1d : %4.0f : %4.0f", accel.x, accel.y, accel.z, light, orientation.c_str(), nyan, accel_angle_x, accel_angle_y);
   Serial.println(str);
   Particle.publish("accelData", str);
 }
@@ -285,12 +291,14 @@ void calc_xy_angles(){
   int x = getXAverage();
   int y = getYAverage();
   int z = getZAverage();
-  accel_angle_x = atan(x / sqrt(y * y + z * z)) * 180 / PI;
-  accel_angle_y = atan(y / sqrt(x * x + z * z)) * 180 / PI;
+  accel_angle_x = atan(x / sqrt(y * y + z * z)) * 180 / M_PI;
+  accel_angle_y = atan(y / sqrt(x * x + z * z)) * 180 / M_PI;
+  servo.write(startServoPos - accel_angle_x);
 }
 
 
 // copied from http://theccontinuum.com/2012/09/24/arduino-imu-pitch-roll-from-accelerometer/
+/*
 void calc_xy_angles2(int Xg, int Yg, int Zg){
   //Low Pass Filter
   fXg = Xg * alpha + (fXg * (1.0 - alpha));
@@ -300,7 +308,9 @@ void calc_xy_angles2(int Xg, int Yg, int Zg){
   //Roll & Pitch Equations
   roll  = (atan2(-fYg, fZg)*180.0)/M_PI;
   pitch = (atan2(fXg, sqrt(fYg*fYg + fZg*fZg))*180.0)/M_PI;
+  servo.write(pitch + startServoPos);
 }
+*/
 
 void loop() {
   now = millis();
@@ -308,10 +318,11 @@ void loop() {
     ledSignalingCounter = now;
     LED_Signaling_Override();
   }
-  if(now - readAccelCounter >= 100) {
+  if(now - readAccelCounter >= 25) {
     readAccelCounter = now;
     readAccel();
-    calc_xy_angles2(accel.x, accel.y, accel.z);
+    calc_xy_angles();
+    //calc_xy_angles2(accel.x, accel.y, accel.z);
     switch(mode) {
       case ORIENTATION:
         checkOrientation();

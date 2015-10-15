@@ -293,7 +293,7 @@ void calc_xy_angles(){
   int z = getZAverage();
   accel_angle_x = atan(x / sqrt(y * y + z * z)) * 180 / M_PI;
   accel_angle_y = atan(y / sqrt(x * x + z * z)) * 180 / M_PI;
-  servo.write(accel_angle_x + startServoPos);
+  servo.write(startServoPos - accel_angle_x);
 }
 
 
