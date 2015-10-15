@@ -63,3 +63,9 @@ product and exemplifies its applicability, keeping the cup stable. This idea
 can be used in a boat for keeping cups and other objects stable.
 
 ![3D printed box assembled with servo](https://raw.githubusercontent.com/TiagoJustino/hcin720/master/ia3/11_final_assembly.jpg)
+
+### Attribution
+
+The idea for this project was based in two youtube videos:
+[CoffeeMate](https://www.youtube.com/watch?v=EbMFuhaoxpo) and [Gyroscopic
+self-leveling pool table](https://www.youtube.com/watch?v=N-aE5oszXyQ).
