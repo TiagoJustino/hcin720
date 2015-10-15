@@ -14,4 +14,21 @@ the battery:
 
 ![Soldered parts](https://raw.githubusercontent.com/TiagoJustino/hcin720/master/ia3/01_parts.jpg)
 
+## Step 2 - Cardboard enclosure
 
+A cardboard enclosure was created using the laser cutter. The box was designed
+using a 2D design software (Adobe Illustrator) and the cardboard was cut using
+a [universal laser systems vls
+6.60](http://www.engravingsys.com/flying-optics-laser/vls-platform-laser/vls-6-60-platform/). 
+
+![Soldered parts](https://raw.githubusercontent.com/TiagoJustino/hcin720/master/ia3/02_lasercut_pieces.jpg)
+
+![Soldered parts](https://raw.githubusercontent.com/TiagoJustino/hcin720/master/ia3/03_lasercut_box_with_slots.jpg)
+
+![Soldered parts](https://raw.githubusercontent.com/TiagoJustino/hcin720/master/ia3/04_assembled_lasercut_box.jpg)
+
+![Soldered parts](https://raw.githubusercontent.com/TiagoJustino/hcin720/master/ia3/05_close_lasercut_box.jpg)
+
+The result can be seen in these two videos: [Lasercut
+box](https://www.youtube.com/watch?v=6FM2jhhoWrU) and [Lasercut box
+demo](https://www.youtube.com/watch?v=5v9mZn7W5Ps).
