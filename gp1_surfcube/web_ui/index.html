@@ -3,14 +3,22 @@
   <head>
     <script typs="text/javascript" src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
     <script type="text/javascript" src="js/jquery.js"></script>
+    <script type="text/javascript" src="js/index.js"></script>
   </head>
   <body>
-    Token: <input type="text", id="token" value="5ac0c86fbff16549db96fc76e809d6432299a775"></input><br/>
-    Device Id: <input type="text", id="deviceid" value="390042001547343339383037"></input><br/>
-    <form action="">
-      <input type="radio" name="source" value="serial" checked="true">Serial
-      <input type="radio" name="source" value="cloud">Cloud
-    </form><br/>
-    <button id="eventButton">Send Event</button>
+    <div>
+      <div>
+        <input id="amount" type="number" min="1" max="500"></input>
+      </div>
+      <div>
+        <button id="in" type="button">Pump in</button><br/>
+        <button id="out" type="button">Pump out</button><br/>
+      </div>
+    </div>
+    <div>
+      <input id="height" type="number" min="1" max="180"></input>
+      <button id="wave" type="button">Wave</button><br/>
+    </div>
+    <ul id="messages"></ul>
   </body>
 </html>

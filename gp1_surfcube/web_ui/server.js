@@ -10,6 +10,7 @@ var serial;
 //When a request come into the server for / give the client the file index.html
 app.get('/', function(req, res){res.sendFile('./index.html', { root: __dirname});});
 app.get('/js/jquery.js', function(req, res){res.sendFile('./js/jquery.js', { root: __dirname});});
+app.get('/js/index.js', function(req, res){res.sendFile('./js/index.js', { root: __dirname});});
 
 //Listen for incoming connections
 http.listen(3000, function(){console.log("listening on port 3000");});
@@ -50,13 +51,14 @@ io.sockets.on('connection',
 	}
 );
 
-exec('particle serial list', function(error, stdout, stderr) {
-  var devName = stdout.split('\n')[1].split(' - ')[0];
-  console.log(devName);
-
-  //Hook up the serial port
-  serial = new SerialPort( devName,
-														{parser: serialport.parsers.readline('\n')});
-  //When the serial port is successfully opened...
-  serial.on('open', onSerialOpen);
+serialport.list(function (err, ports) {
+  if(ports){
+    ports.forEach( function(port) {
+      if(JSON.stringify(port).match(/.*duino.*/gi)) {
+        console.log(port.comName);
+        serial = new SerialPort( port.comName, {parser: serialport.parsers.readline('\n')});
+        serial.on('open', onSerialOpen);
+      }
+    });
+  }
 });

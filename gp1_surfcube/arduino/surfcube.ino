@@ -36,16 +36,35 @@ void loop() {
 int n = 0;
 
 void loop() {
-  int a, b, c;
+  String command;
+  int val;
   if (Serial.available() > 0) {
-    a = Serial.read();
-    if (a == 'a') {
-      myStepper->step(1000, FORWARD, SINGLE);
+    command = Serial.readStringUntil('\n');
+    while(Serial.available() == 0) {}
+    val = Serial.parseInt();
+    if (command == "forward") {
+      Serial.print("Pumping water in! ");
+      myStepper->step(val, FORWARD, SINGLE); 
+    } else if (command == "backward") {
+      Serial.print("Pumping water out! ");
+      myStepper->step(val, BACKWARD, SINGLE); 
+    } else if (command == "servo") {
+      Serial.print("Making waves! ");
+      servo.write(val);
+      delay(500);
+      servo.write(0);
+    } else {
+      Serial.print("Command not understood! ");
+      Serial.print("command = [");
+      Serial.print(command);
+      Serial.print("]; ");
     }
-    if (a == 's') {
-      myStepper->step(1000, BACKWARD, SINGLE);
+    Serial.print("val = [");
+    Serial.print(val);
+    Serial.println("]");
+    while(Serial.available()) {
+      Serial.read();
     }
-
   }
 }
 
