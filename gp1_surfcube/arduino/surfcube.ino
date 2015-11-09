@@ -34,6 +34,7 @@ void loop() {
 */
 
 int n = 0;
+int angle = 120;
 
 void loop() {
   String command;
@@ -50,9 +51,7 @@ void loop() {
       myStepper->step(val, BACKWARD, SINGLE); 
     } else if (command == "servo") {
       Serial.print("Making waves! ");
-      servo.write(val);
-      delay(500);
-      servo.write(0);
+      angle = val;
     } else {
       Serial.print("Command not understood! ");
       Serial.print("command = [");
@@ -65,6 +64,11 @@ void loop() {
     while(Serial.available()) {
       Serial.read();
     }
+
   }
+  servo.write(angle);
+  delay(500);
+  servo.write(120);
+  delay(500);
 }
 

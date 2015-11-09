@@ -4,6 +4,12 @@ $(document).ready(function() {
     $('#messages').append($('<li>').text(data));
   });
 
+  var sendWave = function() {
+    console.log("sending servo command");
+    socket.emit('to serial', "servo");
+    socket.emit('to serial', $( "#height" ).val() );
+  }
+
   $( "#in" ).click(function() {
     console.log("sending forward command");
     socket.emit('to serial', "forward");
@@ -17,8 +23,13 @@ $(document).ready(function() {
   });
 
   $( "#wave" ).click(function() {
-    console.log("sending servo command");
-    socket.emit('to serial', "servo");
-    socket.emit('to serial', $( "#height" ).val() );
+    sendWave();
   });
+
+  $('#height').keyup(function(e){
+    if(e.keyCode == 13)
+    {
+        sendWave();
+    }
+});
 });
