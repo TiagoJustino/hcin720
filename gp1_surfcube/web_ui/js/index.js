@@ -10,6 +10,12 @@ $(document).ready(function() {
     socket.emit('to serial', $( "#height" ).val() );
   }
 
+  var sendFrequency = function() {
+    console.log("sending servo command");
+    socket.emit('to serial', "frequency");
+    socket.emit('to serial', $( "#frequency" ).val() );
+  }
+
   $( "#in" ).click(function() {
     console.log("sending forward command");
     socket.emit('to serial', "forward");
@@ -26,10 +32,22 @@ $(document).ready(function() {
     sendWave();
   });
 
+  $( "#frequencyBtn" ).click(function() {
+    sendFrequency();
+  });
+
   $('#height').keyup(function(e){
     if(e.keyCode == 13)
     {
-        sendWave();
+      sendWave();
     }
-});
+  });
+
+  $('#frequency').keyup(function(e){
+    if(e.keyCode == 13)
+    {
+      sendFrequency();
+    }
+  });
+
 });
