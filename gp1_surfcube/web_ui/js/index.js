@@ -16,6 +16,12 @@ $(document).ready(function() {
     socket.emit('to serial', $( "#frequency" ).val() );
   }
 
+  var sendDelay = function() {
+    console.log("sending servo command");
+    socket.emit('to serial', "delay");
+    socket.emit('to serial', $( "#delay" ).val() );
+  }
+
   $( "#in" ).click(function() {
     console.log("sending forward command");
     socket.emit('to serial', "forward");
@@ -28,13 +34,11 @@ $(document).ready(function() {
     socket.emit('to serial', $( "#amount" ).val() );
   });
 
-  $( "#wave" ).click(function() {
-    sendWave();
-  });
+  $( "#wave" ).click(sendWave);
 
-  $( "#frequencyBtn" ).click(function() {
-    sendFrequency();
-  });
+  $( "#frequencyBtn" ).click(sendFrequency);
+
+  $( "#delayBtn" ).click(sendDelay);
 
   $('#height').keyup(function(e){
     if(e.keyCode == 13)
@@ -47,6 +51,13 @@ $(document).ready(function() {
     if(e.keyCode == 13)
     {
       sendFrequency();
+    }
+  });
+
+  $('#delay').keyup(function(e){
+    if(e.keyCode == 13)
+    {
+      sendDelay();
     }
   });
 
